@@ -1,43 +1,166 @@
-# MissileEmitter
+# MissileEmitter 导弹发射器
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/missile_emitter`. To experiment with that code, run `bin/console` for an interactive prompt.
+Ruby元编程小工具，让你能在类定义（class definition）级别触发 method_missing 事件，同时不用担心潜在的命名冲突（此工具来源于一次本地Ruby集会上的主题分享《[小题大做：Ruby元编程探秘](https://pan.baidu.com/s/1hs5hj04)》）。
 
-TODO: Delete this and the text above, and describe your gem
+Ruby 提供了 `method_missing` 钩子，利用它可以实现很多功能，但其使用场景也是有限的，基本上常见的用法都是在对象级别来触发（BasicObject的实例 就特别合适）。那有没有什么办法，能让我们在类定义级别来实现相同的目标呢？让我们尝试一下：
 
-## Installation
+```ruby
+class MyClass
+  def self.method_missing(message, *args, &block)
+    # 做爱做的事情
+  end
+end
 
-Add this line to your application's Gemfile:
+MyClass.ooxx # 触发类级别的 method_missing
+``` 
+
+看似可行？可惜并不完美，大家都知道 `MyClass` 其实是 `Class` 类的实例，因此本身还是会带有很多与生俱来的方法：
+
+```ruby
+p MyClass.methods.size # => 111
+```
+
+其中不乏有 `name`、`trust`这些很常见的名称，导致无法正常触发 `method_missing`，实用性大打折扣。当然，我们可以借助 `undef_method` 来移除不需要的内置方法。以下是 `builder` 的 [BlankSlate](https://github.com/jimweirich/builder/blob/c80100f8205b2e918dbff605682b01ab0fabb866/lib/blankslate.rb#L41) 实现：
+
+```ruby
+class BlankSlate
+  # Hide the method named +name+ in the BlankSlate class.  Don't
+  # hide +instance_eval+ or any method beginning with "__".
+  def self.hide(name)
+    # ...
+    if instance_methods.include?(name._blankslate_as_name) &&
+        name !~ /^(__|instance_eval$)/
+      # ...
+      undef_method name # 利用 undef_method 移除内置方法定义
+    end
+    # ...
+  end
+  # ...
+  instance_methods.each { |m| hide(m) }
+end
+```
+
+当然，这个方案也不完美，很多时候我们并不能简单粗暴地把所有类方法都取消定义，特别是 `name` 这样的（返回类的字符串名称），你懂的。那该怎么办呢？嗯，采用 Missile Emitter 可以做到，在类方法级别绕开内置方法的名称冲突，顺利触发 `method_missing` ！有了它我们就能实现更多有趣的DSL。
+
+## 安装说明
+
+添加下面这行代码到项目的Gemfile文件:
 
 ```ruby
 gem 'missile_emitter'
 ```
 
-And then execute:
+然后命令行执行:
 
     $ bundle
 
-Or install it yourself as:
+也可以通过下面的方式直接安装 gem 包:
 
     $ gem install missile_emitter
 
-## Usage
+## 使用说明
 
-TODO: Write usage instructions here
+`missile emitter` 需要先定义模块，然后才能在目标类中使用。
 
-## Development
+1. 定义模块:
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+```ruby
+module Attributes
+  extend MissileEmitter -> (field, value, *, &block) do
+    define_method(field) { value || instance_eval(&block) }
+  end
+end
+```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+2. 扩展目标类（同时声明配置项）：
 
-## Contributing
+```ruby
+require 'date'
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/missile_emitter. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+class Person
+  include Attributes {
+    name 'Jerry Chen'
+    sex 'male'
+    birthday Date.parse('1983-08-08')
+    age do
+      (Date.today.strftime('%Y%m%d').to_i - birthday.strftime('%Y%m%d').to_i) / 10000
+    end
+  }
+end
+```
 
-## License
+如此一来，我们就实现了在定义类的同时，配置好需要的属性，测试一下：
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+```ruby
+me = Person.new
+me.name # => 'Jerry Chen'
+me.sex # => 'male'
+me.age # => 36
+```
 
-## Code of Conduct
+上面的例子确实不太有趣，来个实用点的如何？让我们为 `ActiveRecord` 模型类实现声明式搜索。首先，定义模块：
 
-Everyone interacting in the MissileEmitter project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/missile_emitter/blob/master/CODE_OF_CONDUCT.md).
+```ruby
+module Searchable
+
+  extend ActiveSupport::Concern
+
+  included do
+    # 使用 class attribute 保存搜索条件
+    klass.send :class_attribute, :conditions, {}
+  end
+
+  extend MissileEmitter -> |key, *, &block| do
+    # 保存声明的每一个关键字，以及搜索算法
+    self.conditions[key] = block
+  end
+
+  class_methods do
+
+    def search(hash)
+      hash.reduce all do |relation, (key, value)|
+        # Just for fun :)
+        relation = relation.extending do
+          define_method(:_) { value }
+        end
+
+        if value.blank?
+          relation
+        elsif filter = mapping[key]
+          relation.instance_exec(value, &filter)
+        elsif column_names.include?(key)
+          relation.where key => value
+        else
+          relation
+        end
+      end
+    end
+
+  end
+
+end
+```
+
+然后，Mixin 模块：
+
+```ruby
+class Person < ApplicationRecord
+  include Searchable {
+    name_like { |keyword| where 'name like ?', "%#{keyword}%" }
+    older_than { where 'age >= ?', _ }
+  }
+end
+```
+
+最后，在业务代码中使用：
+
+```ruby
+# params: {name: 'Jerry', older_than: 18}
+Person.search params.slice(:name_like, :older_than, :sex)
+# 参数值值不为空的情况下，等价于：
+Person.where('name like ?', "%#{params[:name_like]}%")
+      .where('age >= ?', params[:older_than])
+      .where(sex: params[:sex])
+```
+
+总而言之，使用导弹发射器之后，可以很方便的在类定义级别实现声明式DSL，具体怎么用，就留给你自己慢慢挖掘啦。

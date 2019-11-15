@@ -110,7 +110,7 @@ module Searchable
     klass.send :class_attribute, :conditions, {}
   end
 
-  extend MissileEmitter -> |key, *, &block| do
+  extend MissileEmitter -> (key, *, &block) do
     # 保存声明的每一个关键字，以及搜索算法
     self.conditions[key] = block
   end

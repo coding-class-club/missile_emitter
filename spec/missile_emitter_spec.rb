@@ -32,7 +32,7 @@ RSpec.describe MissileEmitter do
           expect(Target()).to eq Target
         end
 
-        it "方法将接收的代码块传递给洁净室（Clean Room）触发 method_missing 事件"
+        it "方法将接收的代码块传递给战场（BattleField）触发 method_missing 事件"
       end
 
     end

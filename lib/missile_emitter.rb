@@ -13,9 +13,9 @@ module MissileEmitter
 
   def self.extended(klass)
     raise Error.new("不能扩展匿名模块") unless klass.name
-    
+
     ::Kernel.define_method klass.name do |&block|
-      
+      klass
     end
   end
 

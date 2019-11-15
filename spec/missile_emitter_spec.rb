@@ -27,6 +27,12 @@ RSpec.describe MissileEmitter do
         it "生成与目标模块同名的顶层方法" do
           expect(Kernel).to respond_to :Target
         end
+
+        it "生成的方法返回目标模块本身" do
+          expect(Target()).to eq Target
+        end
+
+        it "方法将接收的代码块传递给洁净室（Clean Room）触发 method_missing 事件"
       end
 
     end

@@ -66,8 +66,8 @@ gem 'missile_emitter'
 
 ```ruby
 module Attributes
-  extend MissileEmitter -> (field, value, *, &block) do
-    define_method(field) { value || instance_eval(&block) }
+  MissileEmitter do |klass, field, value, *, &block|
+    klass.define_method(field) { value || instance_eval(&block) }
   end
 end
 ```
@@ -110,9 +110,9 @@ module Searchable
     klass.send :class_attribute, :conditions, {}
   end
 
-  extend MissileEmitter -> (key, *, &block) do
+  MissileEmitter do |klass, key, *, &block|
     # 保存声明的每一个关键字，以及搜索算法
-    self.conditions[key] = block
+    klass.conditions[key] = block
   end
 
   class_methods do

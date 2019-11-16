@@ -12,24 +12,23 @@ module MissileEmitter
     attr_accessor :mapping
   end
 
-  def self.extended(klass)
-    raise Error.new("不能扩展匿名模块") unless klass.name
-
-    ::Kernel.define_method klass.name do |&missile|
-      
-      klass
-    end
-  end
-
   module ::Kernel
-    def MissileEmitter(λ)
-      raise TypeError unless (λ.lambda? rescue false)
+    def MissileEmitter(&block)
+      raise LocalJumpError.new('no block given') unless block_given?
 
-      context = λ.binding.eval 'self'
+      context = block.binding.eval 'self'
 
-      MissileEmitter.mapping[context] = λ if context.instance_of?(Module)
+      raise Error.new("不能扩展匿名模块") unless context.name
 
-      MissileEmitter
+      ::Kernel.define_method context.name do |&missile|
+        klass = missile.binding.eval 'self'
+        battle_field = BattleField.new klass, MissileEmitter.mapping[context]
+        battle_field.emit! &missile
+
+        context
+      end
+
+      MissileEmitter.mapping[context] = block if context.instance_of?(Module)
     end
   end
 

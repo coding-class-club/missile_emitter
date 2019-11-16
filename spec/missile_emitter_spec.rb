@@ -1,42 +1,8 @@
 RSpec.describe MissileEmitter do
 
-  context "作为模块扩展" do
+  context "作为模块" do
     it "使用类实例变量（class instance variable）保存处理器（handler）映射表" do
       expect(MissileEmitter).to be_instance_variable_defined(:@mapping)
-    end
-
-    describe "被扩展（extended）时" do
-
-      context "匿名模块" do
-        it "抛出异常" do
-          expect do
-            Module.new {
-              extend MissileEmitter -> {}
-            }
-          end.to raise_error MissileEmitter::Error
-        end
-      end
-
-      context "具名模块" do
-        before :all do
-          module Target
-            extend MissileEmitter -> {}
-          end
-        end
-
-        it "生成与目标模块同名的顶层方法" do
-          expect(Kernel).to respond_to :Target
-        end
-
-        it "生成的方法返回目标模块本身" do
-          expect(Target()).to eq Target
-        end
-
-        after :all do
-          Object.send :remove_const, :Target
-        end
-      end
-
     end
   end
 
@@ -45,40 +11,78 @@ RSpec.describe MissileEmitter do
       expect(Kernel).to respond_to :MissileEmitter
     end
 
-    it "必须传入一个参数" do
+    it "在匿名模块中调用将抛出异常" do
+      expect do
+        Module.new {
+          MissileEmitter {}
+        }
+      end.to raise_error MissileEmitter::Error
+    end
+
+    it "必须传入代码块" do
       expect {
         MissileEmitter()
-      }.to raise_error ArgumentError
-    end
-
-    it "参数类型必须为lambda" do
-      expect {
-        params = [1, false, nil, '', [], {}, Object.new]
-        
-        params.each do |arbitrary|
-          MissileEmitter arbitrary
-        end
-      }.to raise_error TypeError
-
-      expect {
-        MissileEmitter -> {}
-      }.not_to raise_error
-    end
-
-    it "返回同名模块" do
-      expect(MissileEmitter -> {}).to eq MissileEmitter
+      }.to raise_error LocalJumpError
     end
 
     it "调用之后，将目标模块上下文（context）加入映射表" do
       handler = nil
 
-      target = Module.new do
-        handler = -> {}
+      module Target; end
+      
+      Target.class_eval do
+        handler = -> (*args, &block) {}
 
-        MissileEmitter handler
+        MissileEmitter &handler
       end
 
-      expect(MissileEmitter.mapping).to include(target => handler)
+      expect(MissileEmitter.mapping).to include(Target => handler)
+
+      Object.send :remove_const, :Target
+    end
+
+    it "生成与目标模块同名的顶级方法" do
+      module Target
+        MissileEmitter {}
+      end
+
+      expect(Target {}).to eq Target
+
+      Object.send :remove_const, :Target
+    end
+  end
+
+  describe "调用目标模块同名方法时" do
+    before :all do
+      module Target
+        MissileEmitter do |klass, field, value, *, &block|
+          klass.define_method(field) {value || block.call}
+        end
+      end
+    end
+
+    after :all do
+      Object.send :remove_const, :Target
+    end
+
+    it "生成 BattleField 实例" do
+      expect(MissileEmitter::BattleField).to receive(:new).and_call_original
+
+      Class.new do
+        include Target {}
+      end
+    end
+
+    it "将配置代码块传递给战场（BattleField）实例，触发 method_missing 事件" do
+      battle_field = double 'battle field'
+
+      expect(MissileEmitter::BattleField).to receive(:new).and_return battle_field
+
+      expect(battle_field).to receive(:emit!).and_yield
+
+      Class.new do
+        include Target {}
+      end
     end
   end
 

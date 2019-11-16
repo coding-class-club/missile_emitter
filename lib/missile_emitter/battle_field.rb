@@ -9,5 +9,7 @@ module MissileEmitter
       @handler.call msg, *args, &block
     end
 
+    alias_method :emit!, :instance_eval
+
   end
 end

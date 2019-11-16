@@ -15,7 +15,7 @@ module MissileEmitter
     it "将 method_missing 事件转交给保存的可调用对象处理" do
       callable = double "callable"
 
-      expect(callable).to receive(:call).with a_kind_of(Symbol), any_args
+      expect(callable).to receive(:call).with(a_kind_of(Symbol), any_args).and_yield
 
       BattleField.new(callable).instance_eval do
         missing() {}

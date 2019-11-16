@@ -107,7 +107,7 @@ module Searchable
 
   included do
     # 使用 class attribute 保存搜索条件
-    klass.send :class_attribute, :conditions, {}
+    class_attribute :conditions, {}
   end
 
   MissileEmitter do |klass, key, *, &block|

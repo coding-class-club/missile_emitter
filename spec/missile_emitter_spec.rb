@@ -16,13 +16,13 @@ RSpec.describe MissileEmitter do
         Module.new {
           MissileEmitter {}
         }
-      end.to raise_error MissileEmitter::Error
+      end.to raise_error MissileEmitter::Error, "只能再具名模块中调用"
     end
 
     it "必须传入代码块" do
       expect {
         MissileEmitter()
-      }.to raise_error LocalJumpError
+      }.to raise_error MissileEmitter::Error, "需要提供代码块"
     end
 
     it "调用之后，将目标模块上下文（context）加入映射表" do

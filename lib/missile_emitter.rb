@@ -1,7 +1,10 @@
 require "missile_emitter/version"
 require "missile_emitter/battle_field"
 
-require "pry" rescue nil
+begin 
+  require "pry" 
+rescue LoadError
+end
 
 module MissileEmitter
 

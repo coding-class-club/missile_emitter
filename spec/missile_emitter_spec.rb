@@ -5,7 +5,7 @@ RSpec.describe MissileEmitter do
       expect(MissileEmitter).to be_instance_variable_defined(:@mapping)
     end
 
-    context "被扩展（extended）时" do
+    describe "被扩展（extended）时" do
 
       context "匿名模块" do
         it "抛出异常" do
@@ -32,7 +32,9 @@ RSpec.describe MissileEmitter do
           expect(Target()).to eq Target
         end
 
-        it "方法将接收的代码块传递给战场（BattleField）触发 method_missing 事件"
+        after :all do
+          Object.send :remove_const, :Target
+        end
       end
 
     end
@@ -76,8 +78,7 @@ RSpec.describe MissileEmitter do
         MissileEmitter handler
       end
 
-      expect(MissileEmitter.mapping).to have_key target
-      expect(MissileEmitter.mapping[target]).to eq handler
+      expect(MissileEmitter.mapping).to include(target => handler)
     end
   end
 

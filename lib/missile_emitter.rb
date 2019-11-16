@@ -16,7 +16,7 @@ module MissileEmitter
     raise Error.new("不能扩展匿名模块") unless klass.name
 
     ::Kernel.define_method klass.name do |&missile|
-
+      
       klass
     end
   end

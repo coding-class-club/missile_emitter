@@ -102,22 +102,20 @@ me.age # => 36
 
 ```ruby
 module Searchable
+  # 搜索条件（klass => {keyword: block}）
+  # eg. {Person => {name_like: proc, older_than: proc}}
+  conditions = {}.with_indifferent_access
+
+  MissileEmitter do |klass, key, *, &block|
+    conditions[klass] ||= {}
+    conditions[klass][key] = block
+  end
 
   extend ActiveSupport::Concern
 
   included do
-    # 使用 class attribute 保存搜索条件
-    class_attribute :conditions, {}
-  end
 
-  MissileEmitter do |klass, key, *, &block|
-    # 保存声明的每一个关键字，以及搜索算法
-    klass.conditions[key] = block
-  end
-
-  class_methods do
-
-    def search(hash)
+    define_singleton_method :search do |hash|
       hash.reduce all do |relation, (key, value)|
         # Just for fun :)
         relation = relation.extending do
@@ -126,7 +124,7 @@ module Searchable
 
         if value.blank?
           relation
-        elsif filter = mapping[key]
+        elsif filter = conditions.fetch(self, {})[key]
           relation.instance_exec(value, &filter)
         elsif column_names.include?(key)
           relation.where key => value
@@ -135,8 +133,6 @@ module Searchable
         end
       end
     end
-
-  end
 
 end
 ```

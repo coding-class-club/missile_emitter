@@ -59,6 +59,20 @@ RSpec.describe MissileEmitter do
       end
 
       expect(Namespace::Nested() {}).to eq Namespace::Nested
+
+      Object.send :remove_const, :Namespace
+    end
+
+    it "通过参数配置拟态方法是否启用命名空间" do
+      module Namespace
+        module Nested
+          MissileEmitter(namespace: false) {}
+        end
+      end
+
+      expect(Nested {}).to eq Namespace::Nested
+
+      Object.send :remove_const, :Namespace
     end
 
   end

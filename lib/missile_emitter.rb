@@ -15,31 +15,31 @@ module MissileEmitter
   class << self
     attr_accessor :mapping
 
-    def exec(&block)
+    def exec(namespace, &block)
       raise Error.new("需要提供代码块") unless block_given?
 
       context = block.binding.eval 'self'
 
       raise Error.new("只能再具名模块中调用") unless context.instance_of?(Module) && context.name
 
-      mimic_method context
+      mimic_method context, namespace: namespace
 
       mapping[context] = block
     end
 
     private
 
-    def mimic_method(context)
+    def mimic_method(context, namespace: true)
       path = context.name
 
       ns = deconstantize path
       name = demodulize path
 
       # 处理嵌套模块
-      namespace = ns.empty? ? Kernel : constantize(ns)
-      action = namespace == Kernel ? 'define_method' : 'define_singleton_method'
+      container = !ns.empty? && namespace ? constantize(ns) : Kernel
+      action = container == Kernel ? 'define_method' : 'define_singleton_method'
 
-      namespace.send action, name do |&missile|
+      container.send action, name do |&missile|
         klass = missile.binding.eval 'self'
         battle_field = BattleField.new klass, MissileEmitter.mapping[context]
         battle_field.emit! &missile
@@ -92,7 +92,7 @@ module MissileEmitter
 end
 
 module Kernel
-  def MissileEmitter(&block)
-    MissileEmitter.exec &block
+  def MissileEmitter(namespace: true, &block)
+    MissileEmitter.exec namespace, &block
   end
 end

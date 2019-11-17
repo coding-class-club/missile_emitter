@@ -51,28 +51,32 @@ RSpec.describe MissileEmitter do
       Object.send :remove_const, :Target
     end
 
-    it "考虑 Namespace 嵌套层级关系" do
-      module Namespace
-        module Nested
-          MissileEmitter {}
+    context "在嵌套模块中调用时" do
+
+      it "默认为拟态方法添加命名空间" do
+        module Namespace
+          module Nested
+            MissileEmitter {}
+          end
         end
+
+        expect(Namespace::Nested() {}).to eq Namespace::Nested
+
+        Object.send :remove_const, :Namespace
       end
 
-      expect(Namespace::Nested() {}).to eq Namespace::Nested
-
-      Object.send :remove_const, :Namespace
-    end
-
-    it "通过参数配置拟态方法是否启用命名空间" do
-      module Namespace
-        module Nested
-          MissileEmitter(namespace: false) {}
+      it "通过配置参数可禁用命名空间" do
+        module Namespace
+          module Nested
+            MissileEmitter(namespace: false) {}
+          end
         end
+
+        expect(Nested {}).to eq Namespace::Nested
+
+        Object.send :remove_const, :Namespace
       end
 
-      expect(Nested {}).to eq Namespace::Nested
-
-      Object.send :remove_const, :Namespace
     end
 
   end

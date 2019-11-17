@@ -41,7 +41,7 @@ RSpec.describe MissileEmitter do
       Object.send :remove_const, :Target
     end
 
-    it "生成与目标模块同名的顶级方法" do
+    it "生成与目标模块同名的顶层方法" do
       module Target
         MissileEmitter {}
       end
@@ -50,6 +50,17 @@ RSpec.describe MissileEmitter do
 
       Object.send :remove_const, :Target
     end
+
+    it "考虑 Namespace 嵌套层级关系" do
+      module Namespace
+        module Nested
+          MissileEmitter {}
+        end
+      end
+
+      expect(Namespace::Nested() {}).to eq Namespace::Nested
+    end
+
   end
 
   describe "调用目标模块同名方法时" do

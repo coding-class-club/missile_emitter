@@ -30,13 +30,61 @@ module MissileEmitter
     private
 
     def mimic_method(context)
-      # TODO：处理多层命名空间的情况
-      Kernel.define_method context.name do |&missile|
+      path = context.name
+
+      ns = deconstantize path
+      name = demodulize path
+
+      # 处理嵌套模块
+      namespace = ns.empty? ? Kernel : constantize(ns)
+      action = namespace == Kernel ? 'define_method' : 'define_singleton_method'
+
+      namespace.send action, name do |&missile|
         klass = missile.binding.eval 'self'
         battle_field = BattleField.new klass, MissileEmitter.mapping[context]
         battle_field.emit! &missile
 
         context
+      end
+    end
+
+    def demodulize(path)
+      path = path.to_s
+
+      if i = path.rindex("::")
+        path[(i + 2)..-1]
+      else
+        path
+      end
+    end
+
+    def deconstantize(path)
+      path.to_s[0, path.rindex("::") || 0]
+    end
+
+    def constantize(camel_cased_word)
+      names = camel_cased_word.split("::")
+
+      Object.const_get(camel_cased_word) if names.empty?
+
+      names.shift if names.size > 1 && names.first.empty?
+
+      names.inject(Object) do |constant, name|
+        if constant == Object
+          constant.const_get(name)
+        else
+          candidate = constant.const_get(name)
+          next candidate if constant.const_defined?(name, false)
+          next candidate unless Object.const_defined?(name)
+
+          constant = constant.ancestors.inject(constant) do |const, ancestor|
+            break const    if ancestor == Object
+            break ancestor if ancestor.const_defined?(name, false)
+            const
+          end
+
+          constant.const_get(name, false)
+        end
       end
     end
   end

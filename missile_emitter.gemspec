@@ -5,7 +5,7 @@ require "missile_emitter/version"
 Gem::Specification.new do |spec|
   spec.name          = "missile_emitter"
   spec.version       = MissileEmitter::VERSION
-  spec.authors       = ["coding-class.com"]
+  spec.authors       = ["Jerry Chen"]
   spec.email         = ["code@coding-class.com"]
 
   spec.summary       = %q{Ruby元编程辅助工具}

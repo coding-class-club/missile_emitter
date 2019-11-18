@@ -102,13 +102,12 @@ me.age # => 36
 
 ```ruby
 module Searchable
-  # 搜索条件（klass => {keyword: block}）
-  # eg. {Person => {name_like: proc, older_than: proc}}
-  conditions = {}.with_indifferent_access
+  # 搜索条件（klass => {field: scope}）
+  # eg. {Person => {name_like: scope, older_than: scope}}
+  conditions = {}
 
   MissileEmitter do |klass, key, *, &block|
-    conditions[klass] ||= {}
-    conditions[klass][key] = block
+    (conditions[klass] ||= {}.with_indifferent_access)[key] = block
   end
 
   extend ActiveSupport::Concern
@@ -117,15 +116,13 @@ module Searchable
 
     define_singleton_method :search do |hash|
       hash.reduce all do |relation, (key, value)|
-        # Just for fun :)
-        relation = relation.extending do
-          define_method(:_) { value }
-        end
+        next relation if value.blank? # ignore empty value
 
-        if value.blank?
-          relation
-        elsif filter = conditions.fetch(self, {})[key]
-          relation.instance_exec(value, &filter)
+        if filter = conditions.fetch(self, {})[key]
+          relation.extending do
+            # Just for fun :)
+            define_method(:_) { value }
+          end.instance_exec(value, &filter)
         elsif column_names.include?(key)
           relation.where key => value
         else
@@ -151,12 +148,12 @@ end
 最后，在业务代码中使用：
 
 ```ruby
-# params: {name: 'Jerry', older_than: 18}
+# params: {name: 'Jerry', older_than: 18, sex: 'male'}
 Person.search params.slice(:name_like, :older_than, :sex)
-# 参数值值不为空的情况下，等价于：
+# 参数值不为空的情况下，等价于：
 Person.where('name like ?', "%#{params[:name_like]}%")
       .where('age >= ?', params[:older_than])
       .where(sex: params[:sex])
 ```
 
-总而言之，使用导弹发射器之后，可以很方便的在类定义级别实现声明式DSL，具体怎么用，就留给你自己慢慢挖掘啦。
+总而言之，使用导弹发射器，可以方便的在类定义级别实现声明式DSL，具体怎么用，就留给你自己慢慢挖掘啦。

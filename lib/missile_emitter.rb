@@ -18,7 +18,7 @@ module MissileEmitter
     def exec(namespace, &block)
       raise Error.new("需要提供代码块") unless block_given?
 
-      context = block.binding.eval 'self'
+      context = block.binding.receiver
 
       raise Error.new("只能再具名模块中调用") unless context.instance_of?(Module) && context.name
 
@@ -40,7 +40,7 @@ module MissileEmitter
       action = container == Kernel ? 'define_method' : 'define_singleton_method'
 
       container.send action, name do |&missile|
-        klass = missile.binding.eval 'self'
+        klass = missile.binding.receiver
         battle_field = BattleField.new klass, MissileEmitter.mapping[context]
         battle_field.emit! &missile
 

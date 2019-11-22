@@ -5,13 +5,15 @@ module MissileEmitter
       expect(BattleField.ancestors).to contain_exactly(BattleField, BasicObject)
     end
 
-    it "实例化时接收并保存上下文（Context）和可调用对象（Callable）" do
+    it "实例化时接收并保存上下文（Context）、额外参数，以及可调用对象（Callable）" do
       context = Class.new
       callable = -> {}
+      extras = []
 
-      instance = BattleField.new context, callable
+      instance = BattleField.new context, *extras, callable
 
       expect(instance.instance_eval("@context")).to eq context
+      expect(instance.instance_eval("@extras")).to eq extras
       expect(instance.instance_eval("@handler")).to eq callable
     end
 

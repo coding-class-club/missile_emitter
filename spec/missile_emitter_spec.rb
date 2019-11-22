@@ -7,6 +7,7 @@ RSpec.describe MissileEmitter do
   end
 
   context "作为方法调用" do
+    
     it "是一个顶层方法" do
       expect(Kernel).to respond_to :MissileEmitter
     end

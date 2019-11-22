@@ -39,10 +39,10 @@ module MissileEmitter
       container = !ns.empty? && namespace ? constantize(ns) : Kernel
       action = container == Kernel ? 'define_method' : 'define_singleton_method'
 
-      container.send action, name do |&missile|
+      container.send action, name do |*args, &missile|
         klass = missile.binding.receiver
         battle_field = BattleField.new klass, MissileEmitter.mapping[context]
-        battle_field.emit! &missile
+        battle_field.emit! *args, &missile
 
         context
       end
@@ -87,6 +87,7 @@ module MissileEmitter
         end
       end
     end
+
   end
 
 end

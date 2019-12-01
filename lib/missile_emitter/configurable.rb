@@ -5,7 +5,7 @@ module MissileEmitter
       klass.define_singleton_method key do |&writer|
         setting = find_or_create_by! key_field => key
 
-        value = setting.instance_eval &(writer || default || -> {})
+        value = setting.instance_exec &(writer || default || -> {})
 
         setting.update(value_field => value)
 

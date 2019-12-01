@@ -41,8 +41,8 @@ module MissileEmitter
 
       container.send action, name do |*args, &missile|
         klass = missile.binding.receiver
-        battle_field = BattleField.new klass, MissileEmitter.mapping[context]
-        battle_field.emit! *args, &missile
+        battle_field = BattleField.new klass, *args, MissileEmitter.mapping[context]
+        battle_field.emit! &missile
 
         context
       end

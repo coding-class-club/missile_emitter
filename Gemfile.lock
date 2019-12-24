@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    missile_emitter (0.3.6)
+    missile_emitter (0.3.7)
 
 GEM
   remote: https://rubygems.org/

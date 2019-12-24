@@ -22,7 +22,7 @@ module MissileEmitter
               # Just for fun :)
               define_method(:_) { value }
             end.instance_exec(value, &filter)
-          elsif column_names.include?(key)
+          elsif column_names.include?(key.to_s)
             relation.where key => value
           else
             relation

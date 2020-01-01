@@ -156,4 +156,4 @@ Person.where('name like ?', "%#{params[:name_like]}%")
       .where(sex: params[:sex])
 ```
 
-总而言之，使用导弹发射器，可以方便的在类定义级别实现声明式DSL（示例参见 [`attributes.rb`](https://github.com/coding-class-club/missile_emitter/blob/master/lib/missile_emitter/attributes.rb) 、[`searchable.rb`](https://github.com/coding-class-club/missile_emitter/blob/master/lib/missile_emitter/searchable.rb)），至于更多的用法，就留给你自己慢慢挖掘啦。
+总而言之，使用导弹发射器，可以方便的在类定义级别实现声明式DSL（示例参见 [`attributes.rb`](https://github.com/coding-class-club/missile_emitter/blob/master/lib/missile_emitter/attributes.rb) 、[`configurable.rb`](https://github.com/coding-class-club/missile_emitter/blob/master/lib/missile_emitter/configurable.rb)、[`searchable.rb`](https://github.com/coding-class-club/missile_emitter/blob/master/lib/missile_emitter/searchable.rb)），至于更多的用法，就留给你自己慢慢挖掘啦。

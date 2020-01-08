@@ -1,7 +1,13 @@
 module MissileEmitter
   module Configurable
+
+    # 配置项列表（klass => [key1, key2, ...]）
+    # eg. {Setting => [:logo, :copyright, ...]}
+    option_names = {}
     
     MissileEmitter do |klass, key_field = :key, value_field = :value, key, &default|
+      (option_names[klass] ||= [].to_set) << key
+
       klass.define_singleton_method key do |&writer|
         setting = find_or_initialize_by key_field => key
 
@@ -18,6 +24,17 @@ module MissileEmitter
         setting.save!
 
         value
+      end
+    end
+
+    extend ActiveSupport::Concern
+
+    included do
+      # 获取所有配置：Klass.options ---> {logo: '', copyright: '', ...}
+      define_singleton_method :options do
+        option_names.fetch(self, []).map do |key|
+          {key => send(key)}
+        end
       end
     end
 

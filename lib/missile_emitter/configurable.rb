@@ -32,8 +32,8 @@ module MissileEmitter
     included do
       # 获取所有配置：Klass.options ---> {logo: '', copyright: '', ...}
       define_singleton_method :options do
-        option_names.fetch(self, []).map do |key|
-          {key => send(key)}
+        option_names.fetch(self, []).each_with_object({}) do |key, result|
+          result[key] = send key
         end
       end
     end

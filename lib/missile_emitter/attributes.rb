@@ -1,9 +1,9 @@
 module MissileEmitter
   module Attributes
-    MissileEmitter do |klass, field, default, *, &block|
+    MissileEmitter do |_, field, default, *, &block|
       attribute = "@#{field}" # 构造实例变量名称，如：name => @name
       # 动态定义实例⽅法
-      klass.define_method field do
+      define_method field do
         if instance_variable_defined?(attribute)
           instance_variable_get attribute
         else

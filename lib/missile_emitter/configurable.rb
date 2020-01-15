@@ -8,7 +8,7 @@ module MissileEmitter
     MissileEmitter do |klass, key_field = :key, value_field = :value, key, &default|
       (mapping[klass] ||= [].to_set) << key
 
-      klass.define_singleton_method key do |&writer|
+      define_singleton_method key do |&writer|
         setting = find_or_initialize_by key_field => key
 
         value = setting.send value_field
@@ -27,19 +27,15 @@ module MissileEmitter
       end
     end
 
-    extend ActiveSupport::Concern
+    # 获取所有配置项名称：Klass.option_names ---> [:logo, copyright, ...]
+    define_method :option_names do
+      mapping.fetch self, []
+    end
 
-    included do
-      # 获取所有配置项名称：Klass.option_names ---> [:logo, copyright, ...]
-      define_singleton_method :option_names do
-        mapping.fetch self, []
-      end
-
-      # 获取所有配置：Klass.options ---> {logo: '', copyright: '', ...}
-      define_singleton_method :options do
-        option_names.each_with_object({}) do |key, result|
-          result[key] = send key
-        end
+    # 获取所有配置：Klass.options ---> {logo: '', copyright: '', ...}
+    define_method :options do
+      option_names.each_with_object({}) do |key, result|
+        result[key] = send key
       end
     end
 

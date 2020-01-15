@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    missile_emitter (0.3.10)
+    missile_emitter (0.3.11)
 
 GEM
   remote: https://rubygems.org/
@@ -38,4 +38,4 @@ DEPENDENCIES
   rspec (~> 3.0)
 
 BUNDLED WITH
-   2.0.2
+   2.1.2

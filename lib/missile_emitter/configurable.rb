@@ -36,8 +36,8 @@ module MissileEmitter
 
     # 获取所有配置：Klass.options ---> {logo: '', copyright: '', ...}
     define_singleton_method :options_for do |klass|
-      option_names(klass).each_with_object({}) do |key, result|
-        result[key] = send key
+      option_names_for(klass).each_with_object({}) do |key, result|
+        result[key] = klass.send key
       end
     end
 

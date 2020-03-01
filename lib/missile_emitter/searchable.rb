@@ -18,14 +18,13 @@ module MissileEmitter
         next relation if value.blank? # ignore empty value
 
         if filter = conditions.fetch(self, {})[key]
+          # Inside the scope block, You can get value through calling the _ method
           relation.extending do
-            # Just for fun :) With Ruby >= 2.7 you can use _1 instead of _.
+            # Just for fun :) 
             define_method(:_) { value }
-
-            unless has_underline_method
-              # If RUBY_VERSION < 2.7.0, polyfill the _1 convenient method
-              alias_method :_1, :_
-            end
+            # With ruby >= 2.7 you can use _1 instead of _
+            # Polyfill for the earlier version
+            alias_method :_1, :_ unless has_underline_method
           end.instance_exec(value, &filter)
         elsif column_names.include?(key.to_s)
           relation.where key => value

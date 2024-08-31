@@ -10,8 +10,8 @@ module MissileEmitter
     MissileEmitter do |klass, key_field = :key, value_field = :value, key, &default|
       (mapping[klass] ||= [].to_set) << key
 
-      define_method key do |&writer|
-        setting = find_or_initialize_by key_field => key
+      define_method key do |locale='zh_CN', &writer|
+        setting = find_or_initialize_by key_field => key, locale: locale
 
         value = setting.send value_field
 
